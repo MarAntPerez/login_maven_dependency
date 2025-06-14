@@ -51,8 +51,9 @@ public class LoginService {
 			IdEntity idEntity = new IdEntity();
 			idEntity.setId(idEncrypted);
 			idEntity.setUsername(userEncripted.getUsername());
+			users.put(idEncrypted, userEntity);
 			LOG.info("Usuario encriptado con exito");
-			if (userRepository.save(userEncripted)) {
+			if (userRepository.save(users)) {
 				ids = idRepository.save(idEntity);
 				LOG.info("Usuario guardado con exito");
 				return true;

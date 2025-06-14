@@ -90,55 +90,56 @@ public class LoginService {
 	public boolean verifyToken(String token) {
 <span class="nc" id="L91">		String[] tokenDivide = token.split(&quot;_&quot;);</span>
 <span class="nc" id="L92">		String id = tokenDivide[0];</span>
-<span class="nc" id="L93">		return true;</span>
+<span class="nc" id="L93">		String date = tokenDivide[1];</span>
+<span class="nc" id="L94">		return true;</span>
 	}
 
 	private String generateToken(String id) {
-<span class="nc" id="L97">		return id + &quot;_&quot; + LocalDateTime.now().toString();</span>
+<span class="nc" id="L98">		return id + &quot;_&quot; + LocalDateTime.now().toString();</span>
 	}
 
 	private UserEntity userDtoToEntity(UserData user) {
-<span class="nc bnc" id="L101" title="All 2 branches missed.">		if (user == null) {</span>
-<span class="nc" id="L102">			LOG.error(&quot;No fue posible convertir el objeto DTO a Entity&quot;);</span>
-<span class="nc" id="L103">			return null;</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">		if (user == null) {</span>
+<span class="nc" id="L103">			LOG.error(&quot;No fue posible convertir el objeto DTO a Entity&quot;);</span>
+<span class="nc" id="L104">			return null;</span>
 		}
 
-<span class="nc" id="L106">		UserEntity entity = new UserEntity();</span>
-<span class="nc" id="L107">		entity.setUsername(user.getUsername());</span>
-<span class="nc" id="L108">		entity.setPsw(user.getPsw());</span>
+<span class="nc" id="L107">		UserEntity entity = new UserEntity();</span>
+<span class="nc" id="L108">		entity.setUsername(user.getUsername());</span>
+<span class="nc" id="L109">		entity.setPsw(user.getPsw());</span>
 
-<span class="nc" id="L110">		LOG.info(&quot;DTO convertido a Entity&quot;);</span>
-<span class="nc" id="L111">		return entity;</span>
+<span class="nc" id="L111">		LOG.info(&quot;DTO convertido a Entity&quot;);</span>
+<span class="nc" id="L112">		return entity;</span>
 	}
 
 	private UserEntity encryptUserEntity(UserEntity userEntityOriginal) throws NoSuchAlgorithmException,
 			InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
-<span class="nc" id="L116">		Aes aes = new Aes();</span>
-<span class="nc" id="L117">		UserEntity userEntityEncrypted = new UserEntity();</span>
-<span class="nc" id="L118">		userEntityEncrypted.setUsername(aes.encrypt(userEntityOriginal.getUsername()));</span>
-<span class="nc" id="L119">		userEntityEncrypted.setPsw(aes.encrypt(userEntityOriginal.getPsw()));</span>
-<span class="nc" id="L120">		return userEntityEncrypted;</span>
+<span class="nc" id="L117">		Aes aes = new Aes();</span>
+<span class="nc" id="L118">		UserEntity userEntityEncrypted = new UserEntity();</span>
+<span class="nc" id="L119">		userEntityEncrypted.setUsername(aes.encrypt(userEntityOriginal.getUsername()));</span>
+<span class="nc" id="L120">		userEntityEncrypted.setPsw(aes.encrypt(userEntityOriginal.getPsw()));</span>
+<span class="nc" id="L121">		return userEntityEncrypted;</span>
 	}
 
 	private String searchId(String username) {
-<span class="nc" id="L124">		return ids.get(username);</span>
+<span class="nc" id="L125">		return ids.get(username);</span>
 	}
 
 	public HashMap&lt;String, UserEntity&gt; getUsers() {
-<span class="nc" id="L128">		return users;</span>
+<span class="nc" id="L129">		return users;</span>
 	}
 
 	public void setUsers(HashMap&lt;String, UserEntity&gt; users) {
-<span class="nc" id="L132">		this.users = users;</span>
-<span class="nc" id="L133">	}</span>
+<span class="nc" id="L133">		this.users = users;</span>
+<span class="nc" id="L134">	}</span>
 
 	public HashMap&lt;String, String&gt; getIds() {
-<span class="nc" id="L136">		return ids;</span>
+<span class="nc" id="L137">		return ids;</span>
 	}
 
 	public void setIds(HashMap&lt;String, String&gt; ids) {
-<span class="nc" id="L140">		this.ids = ids;</span>
-<span class="nc" id="L141">	}</span>
+<span class="nc" id="L141">		this.ids = ids;</span>
+<span class="nc" id="L142">	}</span>
 
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

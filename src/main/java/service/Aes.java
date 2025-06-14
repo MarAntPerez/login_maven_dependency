@@ -26,12 +26,12 @@ public class Aes {
 		secretKey = new SecretKeySpec(keyAdjusted, "AES");
 	}
 
-	public String encrypt(String word) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException,
-			NoSuchAlgorithmException, NoSuchPaddingException {
+	public String encrypt(String word) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException  {
 		Cipher cipher = Cipher.getInstance(ALGORITMO_AES);
 		cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 		byte[] idEncrypted = cipher.doFinal(word.getBytes(StandardCharsets.UTF_8));
 		return Base64.getEncoder().encodeToString(idEncrypted);
+		
 	}
 
 	public String decrypt(String word) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,

@@ -4,5 +4,8 @@ entity\UserEntity.class
 repository\UserRepository.class
 dto\UserData.class
 service\App.class
+exceptions\UserNotFoundException.class
 service\LoginService.class
+exceptions\ExpiredTokenException.class
 entity\IdEntity.class
+exceptions\TokenInvalidException.class

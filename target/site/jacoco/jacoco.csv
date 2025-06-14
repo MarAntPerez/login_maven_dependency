@@ -1,0 +1,12 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+login,service,Aes,64,0,0,0,14,0,3,0,3,0
+login,service,LoginService,222,0,12,0,65,0,19,0,13,0
+login,service,App,35,0,2,0,10,0,3,0,2,0
+login,repository,UserRepository,9,0,0,0,3,0,3,0,3,0
+login,repository,IdRepository,20,0,0,0,5,0,3,0,3,0
+login,exceptions,TokenInvalidException,4,0,0,0,2,0,1,0,1,0
+login,exceptions,UserNotFoundException,4,0,0,0,2,0,1,0,1,0
+login,exceptions,ExpiredTokenException,4,0,0,0,2,0,1,0,1,0
+login,entity,IdEntity,17,0,0,0,7,0,5,0,5,0
+login,entity,UserEntity,24,0,0,0,10,0,7,0,7,0
+login,dto,UserData,17,0,0,0,7,0,5,0,5,0

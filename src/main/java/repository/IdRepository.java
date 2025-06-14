@@ -10,8 +10,10 @@ public class IdRepository {
 		return new HashMap<>();
 	}
 	
-	public boolean save(IdEntity newId) {
-		return true;
+	public HashMap<String, String> save(IdEntity newId) {
+		HashMap<String, String> ids = new HashMap<String, String>();
+		ids.put(newId.getUsername(), newId.getId());
+		return ids;
 	}
 	
 }

@@ -1,7 +1,10 @@
 package service;
 
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.UUID;
@@ -35,14 +38,14 @@ public class LoginService {
 	}
 
 	public boolean userRegister(UserData data) throws InvalidKeyException, NoSuchAlgorithmException,
-			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
 		if (data == null) {
 			LOG.error("Error, datos no validos");
+			return false;
 		}
 
 		UserEntity userEntity = userDtoToEntity(data);
 		Aes aes = new Aes();
-		System.out.println("DTO convertido a Entity");
 
 		if (userEntity != null) {
 			UserEntity userEncripted = encryptUserEntity(userEntity);
@@ -52,9 +55,9 @@ public class LoginService {
 			idEntity.setId(idEncrypted);
 			idEntity.setUsername(userEncripted.getUsername());
 			users.put(idEncrypted, userEntity);
+			ids.put(idEntity.getUsername(), idEntity.getId());
 			LOG.info("Usuario encriptado con exito");
-			if (userRepository.save(users)) {
-				ids = idRepository.save(idEntity);
+			if (userRepository.save(users) && idRepository.save(ids)) {
 				LOG.info("Usuario guardado con exito");
 				return true;
 			}
@@ -67,7 +70,6 @@ public class LoginService {
 	public String auth(UserData data) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException,
 			IllegalBlockSizeException, BadPaddingException {
 		if (data == null) {
-			System.out.println("Error datos no validos");
 			LOG.error("Error datos no validos");
 			return null;
 		}
@@ -78,21 +80,44 @@ public class LoginService {
 		String token;
 		if (id != null) {
 			token = generateToken(id);
-			System.out.println("Token generado con exito: " + token);
 			LOG.info("Token generado con exito {}", token);
 			return token;
 		}
 
-		System.out.println("Los datos ingresados no son correctos");
 		LOG.error("Los datos ingresados no son correctos.");
 		return null;
 	}
 
 	public boolean verifyToken(String token) {
-		String[] tokenDivide = token.split("_");
-		String id = tokenDivide[0];
-		String date = tokenDivide[1];
-		return true;
+		try {
+			String[] tokenDivide = token.split("_");
+			if (tokenDivide.length != 2) {
+				LOG.error("Formato de token no valido");
+				return false;
+			}
+			String id = tokenDivide[0];
+			String date = tokenDivide[1];
+
+			LocalDateTime tokenTime = LocalDateTime.parse(date);
+			LocalDateTime now = LocalDateTime.now();
+
+			Duration duration = Duration.between(tokenTime, now);
+			long secondsPassed = duration.getSeconds();
+
+			if (secondsPassed <= 30) {
+				LOG.info("Token valido, tiempo trancurrido {}", secondsPassed);
+				return true;
+			} else {
+				LOG.warn("Token expirado.");
+				return false;
+			}
+		} catch (DateTimeException e) {
+			LOG.error("Fecha de token no valido", e);
+			return false;
+		} catch (Exception e) {
+			LOG.error("Error al verificate el token", e);
+			return false;
+		}
 	}
 
 	private String generateToken(String id) {

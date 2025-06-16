@@ -13,7 +13,7 @@ import entity.UserEntity;
 public class UserRepository {
 
 	public HashMap<String, UserEntity> load(){
-		HashMap<String, UserEntity> users = new HashMap<String, UserEntity>();
+		HashMap<String, UserEntity> users = new HashMap<>();
 		
 		try (BufferedReader reader = new BufferedReader(new FileReader("Datos/users.txt"))) {
 			String line;

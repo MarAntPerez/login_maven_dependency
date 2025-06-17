@@ -12,18 +12,18 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-public class Aes {
+public class AesService {
 
 	private static final String KEY = "=18F\\j]/8z5FSeg|d!CoM_v&006O)R/J?8569/n14KD'+`XVU}";
 	private static final String ALGORITMO_AES = "AES";
 
 	private SecretKey secretKey;
 
-	public Aes() throws NoSuchAlgorithmException {
+	public AesService() throws NoSuchAlgorithmException {
 		byte[] keyOnBytes = KEY.getBytes(StandardCharsets.UTF_8);
 		byte[] keyAdjusted = new byte[16];
 		System.arraycopy(keyOnBytes, 0, keyAdjusted, 0, Math.min(keyOnBytes.length, 16));
-		secretKey = new SecretKeySpec(keyAdjusted, "AES");
+		secretKey = new SecretKeySpec(keyAdjusted, ALGORITMO_AES);
 	}
 
 	public String encrypt(String word) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException  {

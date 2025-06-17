@@ -7,6 +7,7 @@ import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.crypto.BadPaddingException;
@@ -19,84 +20,122 @@ import org.apache.logging.log4j.Logger;
 import dto.UserData;
 import entity.IdEntity;
 import entity.UserEntity;
+import enums.TokenDuration;
+import exceptions.AesFailedException;
+import exceptions.ErrorLoadAesException;
+import exceptions.ExpiredTokenException;
+import exceptions.TokenInvalidException;
+import exceptions.UserNotFoundException;
 import repository.IdRepository;
 import repository.UserRepository;
 
 public class LoginService {
 
 	private static final Logger LOG = LogManager.getLogger(LoginService.class);
+	private static final int INDEX_OF_ID = 0;
+	private static final int INDEX_OF_DATE = 1;
 	private HashMap<String, UserEntity> users;
 	private HashMap<String, String> ids;
 	private UserRepository userRepository;
 	private IdRepository idRepository;
+	private AesService aesService;
+	private TokenDuration tokenDuration;
 
-	public LoginService() {
+	public LoginService(TokenDuration tokenDuration) throws ErrorLoadAesException {
+		this.tokenDuration = tokenDuration;
 		userRepository = new UserRepository();
 		idRepository = new IdRepository();
 		setUsers(userRepository.load());
 		setIds(idRepository.load());
+		try {
+			aesService = new AesService();
+		} catch (NoSuchAlgorithmException e) {
+			LOG.error(e);
+			e.printStackTrace();
+
+			throw new ErrorLoadAesException();
+		}
 	}
 
-	public boolean userRegister(UserData data) throws InvalidKeyException, NoSuchAlgorithmException,
-			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+	public boolean userRegister(UserData data) throws IOException, AesFailedException {
 		if (data == null) {
 			LOG.error("Error, datos no validos");
 			return false;
 		}
 
 		UserEntity userEntity = userDtoToEntity(data);
-		Aes aes = new Aes();
 
-		if (userEntity != null) {
-			UserEntity userEncripted = encryptUserEntity(userEntity);
-			String idEncrypted = aes.encrypt(UUID.randomUUID().toString());
-			userEncripted.setId(idEncrypted);
-			IdEntity idEntity = new IdEntity();
-			idEntity.setId(idEncrypted);
-			idEntity.setUsername(userEncripted.getUsername());
-			users.put(idEncrypted, userEntity);
-			ids.put(idEntity.getUsername(), idEntity.getId());
-			LOG.info("Usuario encriptado con exito");
-			if (userRepository.save(users) && idRepository.save(ids)) {
-				LOG.info("Usuario guardado con exito");
-				return true;
+		try {
+			if (userEntity != null) {
+				UserEntity userEncripted;
+
+				userEncripted = encryptUserEntity(userEntity);
+
+				String idEncrypted = aesService.encrypt(UUID.randomUUID().toString());
+				userEncripted.setId(idEncrypted);
+				IdEntity idEntity = new IdEntity();
+				idEntity.setId(idEncrypted);
+				idEntity.setUsername(userEncripted.getUsername());
+				users.put(idEncrypted, userEntity);
+				ids.put(idEntity.getUsername(), idEntity.getId());
+				LOG.info("Usuario encriptado con exito");
+				if (userRepository.save(users) && idRepository.save(ids)) {
+					LOG.info("Usuario guardado con exito");
+					return true;
+				}
 			}
-		}
 
+		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
+				| BadPaddingException e) {
+			LOG.error("Error al cifrar/descifrar datos {}.", userEntity.getUsername());
+			LOG.error("Error al cifrar/descifrar datos. {}", userEntity);
+			e.printStackTrace();
+			throw new AesFailedException();
+
+		}
 		LOG.error("Error al registrar el usuario");
 		return false;
 	}
 
-	public String auth(UserData data) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException,
-			IllegalBlockSizeException, BadPaddingException {
+	public String auth(UserData data) throws UserNotFoundException {
 		if (data == null) {
 			LOG.error("Error datos no validos");
-			return null;
+			throw new UserNotFoundException();
 		}
 
-		Aes aes = new Aes();
 		UserEntity user = userDtoToEntity(data);
-		String id = searchId(aes.encrypt(user.getUsername()));
-		String token;
-		if (id != null) {
-			token = generateToken(id);
-			LOG.info("Token generado con exito {}", token);
-			return token;
+
+		try {
+			String id = searchId(aesService.encrypt(user.getUsername()));
+			String token;
+			if (id != null) {
+				token = generateToken(id);
+				LOG.info("Token generado con exito {}", token);
+				return token;
+			}else {
+				throw new UserNotFoundException();
+			}
+			
+			
+		} catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | IllegalBlockSizeException
+				| BadPaddingException e) {
+			LOG.error("Los datos ingresados no son correctos. {}", data.getUsername());
+			e.printStackTrace();
 		}
 
 		LOG.error("Los datos ingresados no son correctos.");
-		return null;
+		throw new UserNotFoundException();
 	}
 
-	public boolean verifyToken(String token) {
+	public boolean verifyToken(String token) throws TokenInvalidException {
 		try {
 			String[] tokenDivide = token.split("_");
 			if (tokenDivide.length != 2) {
 				LOG.error("Formato de token no valido");
 				return false;
 			}
-			String id = tokenDivide[0];
-			String date = tokenDivide[1];
+			String id = tokenDivide[INDEX_OF_ID];
+			String date = tokenDivide[INDEX_OF_DATE];
 
 			LocalDateTime tokenTime = LocalDateTime.parse(date);
 			LocalDateTime now = LocalDateTime.now();
@@ -104,19 +143,19 @@ public class LoginService {
 			Duration duration = Duration.between(tokenTime, now);
 			long secondsPassed = duration.getSeconds();
 
-			if (secondsPassed <= 30) {
+			if (secondsPassed <= tokenDuration.getSeconds()) {
 				LOG.info("Token valido, tiempo trancurrido {}", secondsPassed);
 				return true;
 			} else {
-				LOG.warn("Token expirado.");
-				return false;
+				LOG.error("Token expirado.");
+				throw new ExpiredTokenException();
 			}
 		} catch (DateTimeException e) {
-			LOG.error("Fecha de token no valido", e);
-			return false;
+			LOG.error("Fecha de token no valido ", e);
+			throw new TokenInvalidException();
 		} catch (Exception e) {
-			LOG.error("Error al verificate el token", e);
-			return false;
+			LOG.error("Error al verificar el token ", e);
+			throw new TokenInvalidException();
 		}
 	}
 
@@ -134,16 +173,17 @@ public class LoginService {
 		entity.setUsername(user.getUsername());
 		entity.setPsw(user.getPsw());
 
-		LOG.info("DTO convertido a Entity");
+		LOG.info("DTO convertido a Entity: {}", entity.getUsername());
+		LOG.debug("DTO Convertido a Entity:{} ", entity);
+
 		return entity;
 	}
 
 	private UserEntity encryptUserEntity(UserEntity userEntityOriginal) throws NoSuchAlgorithmException,
 			InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
-		Aes aes = new Aes();
 		UserEntity userEntityEncrypted = new UserEntity();
-		userEntityEncrypted.setUsername(aes.encrypt(userEntityOriginal.getUsername()));
-		userEntityEncrypted.setPsw(aes.encrypt(userEntityOriginal.getPsw()));
+		userEntityEncrypted.setUsername(aesService.encrypt(userEntityOriginal.getUsername()));
+		userEntityEncrypted.setPsw(aesService.encrypt(userEntityOriginal.getPsw()));
 		return userEntityEncrypted;
 	}
 
@@ -151,20 +191,20 @@ public class LoginService {
 		return ids.get(username);
 	}
 
-	public HashMap<String, UserEntity> getUsers() {
+	public Map<String, UserEntity> getUsers() {
 		return users;
 	}
 
-	public void setUsers(HashMap<String, UserEntity> users) {
-		this.users = users;
+	public void setUsers(Map<String, UserEntity> users) {
+		this.users = (HashMap<String, UserEntity>) users;
 	}
 
-	public HashMap<String, String> getIds() {
+	public Map<String, String> getIds() {
 		return ids;
 	}
 
-	public void setIds(HashMap<String, String> ids) {
-		this.ids = ids;
+	public void setIds(Map<String, String> ids) {
+		this.ids = (HashMap<String, String>) ids;
 	}
 
 }

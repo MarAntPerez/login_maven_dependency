@@ -1,5 +1,7 @@
 package entity;
 
+
+
 public class UserEntity {
 
 	private String username;
@@ -48,7 +50,9 @@ public class UserEntity {
 
 	@Override
 	public String toString() {
-		return username + "," + psw + "," + id;
+		return "UserEntity [username=" + username + ", psw=" + psw + ", id=" + id + "]";
 	}
+
+
 
 }

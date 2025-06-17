@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">login</a> &gt; <a href="index.source.html" class="el_package">service</a> &gt; <span class="el_source">LoginService.java</span></div><h1>LoginService.java</h1><pre class="source lang-java linenums">package service;
 
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.UUID;
@@ -16,130 +19,190 @@ import org.apache.logging.log4j.Logger;
 import dto.UserData;
 import entity.IdEntity;
 import entity.UserEntity;
+import enums.TokenDuration;
+import exceptions.AesFailedException;
+import exceptions.ErrorLoadAesException;
+import exceptions.ExpiredTokenException;
+import exceptions.TokenInvalidException;
+import exceptions.UserNotFoundException;
 import repository.IdRepository;
 import repository.UserRepository;
 
 public class LoginService {
 
-<span class="nc" id="L24">	private static final Logger LOG = LogManager.getLogger(LoginService.class);</span>
+<span class="nc" id="L33">	private static final Logger LOG = LogManager.getLogger(LoginService.class);</span>
 	private HashMap&lt;String, UserEntity&gt; users;
 	private HashMap&lt;String, String&gt; ids;
 	private UserRepository userRepository;
 	private IdRepository idRepository;
+	private AesService aesService;
+	private TokenDuration tokenDuration;
 
-<span class="nc" id="L30">	public LoginService() {</span>
-<span class="nc" id="L31">		userRepository = new UserRepository();</span>
-<span class="nc" id="L32">		idRepository = new IdRepository();</span>
-<span class="nc" id="L33">		setUsers(userRepository.load());</span>
-<span class="nc" id="L34">		setIds(idRepository.load());</span>
-<span class="nc" id="L35">	}</span>
+<span class="nc" id="L41">	public LoginService(TokenDuration tokenDuration) throws ErrorLoadAesException {</span>
+<span class="nc" id="L42">		this.tokenDuration = tokenDuration;</span>
+<span class="nc" id="L43">		userRepository = new UserRepository();</span>
+<span class="nc" id="L44">		idRepository = new IdRepository();</span>
+<span class="nc" id="L45">		setUsers(userRepository.load());</span>
+<span class="nc" id="L46">		setIds(idRepository.load());</span>
+		try {
+<span class="nc" id="L48">			aesService = new AesService();</span>
+<span class="nc" id="L49">		} catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L50">			LOG.error(e);</span>
+<span class="nc" id="L51">			e.printStackTrace();</span>
 
-	public boolean userRegister(UserData data) throws InvalidKeyException, NoSuchAlgorithmException,
-			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
-<span class="nc bnc" id="L39" title="All 2 branches missed.">		if (data == null) {</span>
-<span class="nc" id="L40">			LOG.error(&quot;Error, datos no validos&quot;);</span>
+<span class="nc" id="L53">			throw new ErrorLoadAesException();</span>
+<span class="nc" id="L54">		}</span>
+<span class="nc" id="L55">	}</span>
+
+	public boolean userRegister(UserData data) throws IOException, AesFailedException {
+<span class="nc bnc" id="L58" title="All 2 branches missed.">		if (data == null) {</span>
+<span class="nc" id="L59">			LOG.error(&quot;Error, datos no validos&quot;);</span>
+<span class="nc" id="L60">			return false;</span>
 		}
 
-<span class="nc" id="L43">		UserEntity userEntity = userDtoToEntity(data);</span>
-<span class="nc" id="L44">		Aes aes = new Aes();</span>
-<span class="nc" id="L45">		System.out.println(&quot;DTO convertido a Entity&quot;);</span>
+<span class="nc" id="L63">		UserEntity userEntity = userDtoToEntity(data);</span>
 
-<span class="nc bnc" id="L47" title="All 2 branches missed.">		if (userEntity != null) {</span>
-<span class="nc" id="L48">			UserEntity userEncripted = encryptUserEntity(userEntity);</span>
-<span class="nc" id="L49">			String idEncrypted = aes.encrypt(UUID.randomUUID().toString());</span>
-<span class="nc" id="L50">			userEncripted.setId(idEncrypted);</span>
-<span class="nc" id="L51">			IdEntity idEntity = new IdEntity();</span>
-<span class="nc" id="L52">			idEntity.setId(idEncrypted);</span>
-<span class="nc" id="L53">			idEntity.setUsername(userEncripted.getUsername());</span>
-<span class="nc" id="L54">			LOG.info(&quot;Usuario encriptado con exito&quot;);</span>
-<span class="nc bnc" id="L55" title="All 2 branches missed.">			if (userRepository.save(userEncripted)) {</span>
-<span class="nc" id="L56">				ids = idRepository.save(idEntity);</span>
-<span class="nc" id="L57">				LOG.info(&quot;Usuario guardado con exito&quot;);</span>
-<span class="nc" id="L58">				return true;</span>
+		try {
+<span class="nc bnc" id="L66" title="All 2 branches missed.">			if (userEntity != null) {</span>
+				UserEntity userEncripted;
+
+<span class="nc" id="L69">				userEncripted = encryptUserEntity(userEntity);</span>
+
+<span class="nc" id="L71">				String idEncrypted = aesService.encrypt(UUID.randomUUID().toString());</span>
+<span class="nc" id="L72">				userEncripted.setId(idEncrypted);</span>
+<span class="nc" id="L73">				IdEntity idEntity = new IdEntity();</span>
+<span class="nc" id="L74">				idEntity.setId(idEncrypted);</span>
+<span class="nc" id="L75">				idEntity.setUsername(userEncripted.getUsername());</span>
+<span class="nc" id="L76">				users.put(idEncrypted, userEntity);</span>
+<span class="nc" id="L77">				ids.put(idEntity.getUsername(), idEntity.getId());</span>
+<span class="nc" id="L78">				LOG.info(&quot;Usuario encriptado con exito&quot;);</span>
+<span class="nc bnc" id="L79" title="All 4 branches missed.">				if (userRepository.save(users) &amp;&amp; idRepository.save(ids)) {</span>
+<span class="nc" id="L80">					LOG.info(&quot;Usuario guardado con exito&quot;);</span>
+<span class="nc" id="L81">					return true;</span>
+				}
 			}
-		}
 
-<span class="nc" id="L62">		LOG.error(&quot;Error al registrar el usuario&quot;);</span>
-<span class="nc" id="L63">		return false;</span>
+<span class="nc" id="L85">		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException</span>
+				| BadPaddingException e) {
+<span class="nc" id="L87">			LOG.error(&quot;Error al cifrar/descifrar datos {}.&quot;, userEntity.getUsername());</span>
+<span class="nc" id="L88">			LOG.error(&quot;Error al cifrar/descifrar datos. {}&quot;, userEntity);</span>
+<span class="nc" id="L89">			e.printStackTrace();</span>
+<span class="nc" id="L90">			throw new AesFailedException();</span>
+
+<span class="nc" id="L92">		}</span>
+<span class="nc" id="L93">		LOG.error(&quot;Error al registrar el usuario&quot;);</span>
+<span class="nc" id="L94">		return false;</span>
 	}
 
-	public String auth(UserData data) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException,
-			IllegalBlockSizeException, BadPaddingException {
-<span class="nc bnc" id="L68" title="All 2 branches missed.">		if (data == null) {</span>
-<span class="nc" id="L69">			System.out.println(&quot;Error datos no validos&quot;);</span>
-<span class="nc" id="L70">			LOG.error(&quot;Error datos no validos&quot;);</span>
-<span class="nc" id="L71">			return null;</span>
+	public String auth(UserData data) throws UserNotFoundException {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">		if (data == null) {</span>
+<span class="nc" id="L99">			LOG.error(&quot;Error datos no validos&quot;);</span>
+<span class="nc" id="L100">			throw new UserNotFoundException();</span>
 		}
 
-<span class="nc" id="L74">		Aes aes = new Aes();</span>
-<span class="nc" id="L75">		UserEntity user = userDtoToEntity(data);</span>
-<span class="nc" id="L76">		String id = searchId(aes.encrypt(user.getUsername()));</span>
-		String token;
-<span class="nc bnc" id="L78" title="All 2 branches missed.">		if (id != null) {</span>
-<span class="nc" id="L79">			token = generateToken(id);</span>
-<span class="nc" id="L80">			System.out.println(&quot;Token generado con exito: &quot; + token);</span>
-<span class="nc" id="L81">			LOG.info(&quot;Token generado con exito {}&quot;, token);</span>
-<span class="nc" id="L82">			return token;</span>
-		}
+<span class="nc" id="L103">		UserEntity user = userDtoToEntity(data);</span>
 
-<span class="nc" id="L85">		System.out.println(&quot;Los datos ingresados no son correctos&quot;);</span>
-<span class="nc" id="L86">		LOG.error(&quot;Los datos ingresados no son correctos.&quot;);</span>
-<span class="nc" id="L87">		return null;</span>
+		try {
+<span class="nc" id="L106">			String id = searchId(aesService.encrypt(user.getUsername()));</span>
+			String token;
+<span class="nc bnc" id="L108" title="All 2 branches missed.">			if (id != null) {</span>
+<span class="nc" id="L109">				token = generateToken(id);</span>
+<span class="nc" id="L110">				LOG.info(&quot;Token generado con exito {}&quot;, token);</span>
+<span class="nc" id="L111">				return token;</span>
+			}else {
+				//lanzar excepcion user not register
+			}
+			
+			
+<span class="nc" id="L117">		} catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | IllegalBlockSizeException</span>
+				| BadPaddingException e) {
+<span class="nc" id="L119">			LOG.error(&quot;Los datos ingresados no son correctos. {}&quot;, data.getUsername());</span>
+<span class="nc" id="L120">			e.printStackTrace();</span>
+<span class="nc" id="L121">		}</span>
+
+<span class="nc" id="L123">		LOG.error(&quot;Los datos ingresados no son correctos.&quot;);</span>
+<span class="nc" id="L124">		throw new UserNotFoundException();</span>
 	}
 
-	public boolean verifyToken(String token) {
-<span class="nc" id="L91">		String[] tokenDivide = token.split(&quot;_&quot;);</span>
-<span class="nc" id="L92">		String id = tokenDivide[0];</span>
-<span class="nc" id="L93">		String date = tokenDivide[1];</span>
-<span class="nc" id="L94">		return true;</span>
+	public boolean verifyToken(String token) throws TokenInvalidException {
+		try {
+<span class="nc" id="L129">			String[] tokenDivide = token.split(&quot;_&quot;);</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">			if (tokenDivide.length != 2) {</span>
+<span class="nc" id="L131">				LOG.error(&quot;Formato de token no valido&quot;);</span>
+<span class="nc" id="L132">				return false;</span>
+			}
+<span class="nc" id="L134">			String id = tokenDivide[0];</span>
+<span class="nc" id="L135">			String date = tokenDivide[1];</span>
+
+<span class="nc" id="L137">			LocalDateTime tokenTime = LocalDateTime.parse(date);</span>
+<span class="nc" id="L138">			LocalDateTime now = LocalDateTime.now();</span>
+
+<span class="nc" id="L140">			Duration duration = Duration.between(tokenTime, now);</span>
+<span class="nc" id="L141">			long secondsPassed = duration.getSeconds();</span>
+
+<span class="nc bnc" id="L143" title="All 2 branches missed.">			if (secondsPassed &lt;= tokenDuration.getSeconds()) {</span>
+<span class="nc" id="L144">				LOG.info(&quot;Token valido, tiempo trancurrido {}&quot;, secondsPassed);</span>
+<span class="nc" id="L145">				return true;</span>
+			} else {
+<span class="nc" id="L147">				LOG.error(&quot;Token expirado.&quot;);</span>
+<span class="nc" id="L148">				throw new ExpiredTokenException();</span>
+			}
+<span class="nc" id="L150">		} catch (DateTimeException e) {</span>
+<span class="nc" id="L151">			LOG.error(&quot;Fecha de token no valido &quot;, e);</span>
+<span class="nc" id="L152">			throw new TokenInvalidException();</span>
+<span class="nc" id="L153">		} catch (Exception e) {</span>
+<span class="nc" id="L154">			LOG.error(&quot;Error al verificar el token &quot;, e);</span>
+<span class="nc" id="L155">			throw new TokenInvalidException();</span>
+		}
 	}
 
 	private String generateToken(String id) {
-<span class="nc" id="L98">		return id + &quot;_&quot; + LocalDateTime.now().toString();</span>
+<span class="nc" id="L160">		return id + &quot;_&quot; + LocalDateTime.now().toString();</span>
 	}
 
 	private UserEntity userDtoToEntity(UserData user) {
-<span class="nc bnc" id="L102" title="All 2 branches missed.">		if (user == null) {</span>
-<span class="nc" id="L103">			LOG.error(&quot;No fue posible convertir el objeto DTO a Entity&quot;);</span>
-<span class="nc" id="L104">			return null;</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">		if (user == null) {</span>
+<span class="nc" id="L165">			LOG.error(&quot;No fue posible convertir el objeto DTO a Entity&quot;);</span>
+<span class="nc" id="L166">			return null;</span>
 		}
 
-<span class="nc" id="L107">		UserEntity entity = new UserEntity();</span>
-<span class="nc" id="L108">		entity.setUsername(user.getUsername());</span>
-<span class="nc" id="L109">		entity.setPsw(user.getPsw());</span>
+<span class="nc" id="L169">		UserEntity entity = new UserEntity();</span>
+<span class="nc" id="L170">		entity.setUsername(user.getUsername());</span>
+<span class="nc" id="L171">		entity.setPsw(user.getPsw());</span>
 
-<span class="nc" id="L111">		LOG.info(&quot;DTO convertido a Entity&quot;);</span>
-<span class="nc" id="L112">		return entity;</span>
+<span class="nc" id="L173">		LOG.info(&quot;DTO convertido a Entity: {}&quot;, entity.getUsername());</span>
+<span class="nc" id="L174">		LOG.debug(&quot;DTO Convertido a Entity:{} &quot;, entity);</span>
+
+<span class="nc" id="L176">		return entity;</span>
 	}
 
 	private UserEntity encryptUserEntity(UserEntity userEntityOriginal) throws NoSuchAlgorithmException,
 			InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
-<span class="nc" id="L117">		Aes aes = new Aes();</span>
-<span class="nc" id="L118">		UserEntity userEntityEncrypted = new UserEntity();</span>
-<span class="nc" id="L119">		userEntityEncrypted.setUsername(aes.encrypt(userEntityOriginal.getUsername()));</span>
-<span class="nc" id="L120">		userEntityEncrypted.setPsw(aes.encrypt(userEntityOriginal.getPsw()));</span>
-<span class="nc" id="L121">		return userEntityEncrypted;</span>
+<span class="nc" id="L181">		UserEntity userEntityEncrypted = new UserEntity();</span>
+<span class="nc" id="L182">		userEntityEncrypted.setUsername(aesService.encrypt(userEntityOriginal.getUsername()));</span>
+<span class="nc" id="L183">		userEntityEncrypted.setPsw(aesService.encrypt(userEntityOriginal.getPsw()));</span>
+<span class="nc" id="L184">		return userEntityEncrypted;</span>
 	}
 
 	private String searchId(String username) {
-<span class="nc" id="L125">		return ids.get(username);</span>
+<span class="nc" id="L188">		return ids.get(username);</span>
 	}
 
 	public HashMap&lt;String, UserEntity&gt; getUsers() {
-<span class="nc" id="L129">		return users;</span>
+<span class="nc" id="L192">		return users;</span>
 	}
 
 	public void setUsers(HashMap&lt;String, UserEntity&gt; users) {
-<span class="nc" id="L133">		this.users = users;</span>
-<span class="nc" id="L134">	}</span>
+<span class="nc" id="L196">		this.users = users;</span>
+<span class="nc" id="L197">	}</span>
 
 	public HashMap&lt;String, String&gt; getIds() {
-<span class="nc" id="L137">		return ids;</span>
+<span class="nc" id="L200">		return ids;</span>
 	}
 
 	public void setIds(HashMap&lt;String, String&gt; ids) {
-<span class="nc" id="L141">		this.ids = ids;</span>
-<span class="nc" id="L142">	}</span>
+<span class="nc" id="L204">		this.ids = ids;</span>
+<span class="nc" id="L205">	}</span>
 
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

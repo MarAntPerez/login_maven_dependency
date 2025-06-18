@@ -1,8 +1,8 @@
 enums\TokenDuration.class
 repository\IdRepository.class
+cmd\App.class
 exceptions\ErrorLoadAesException.class
 service\AesService.class
-App.class
 dto\UserData.class
 exceptions\ExpiredTokenException.class
 exceptions\TokenInvalidException.class

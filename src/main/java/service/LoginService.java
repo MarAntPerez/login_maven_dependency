@@ -1,6 +1,7 @@
 package service;
 
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.DateTimeException;
@@ -34,6 +35,7 @@ public class LoginService {
 	private static final Logger LOG = LogManager.getLogger(LoginService.class);
 	private static final int INDEX_OF_ID = 0;
 	private static final int INDEX_OF_DATE = 1;
+	private static final String CONTEXT_ERROR = "context: ";
 	private HashMap<String, UserEntity> users;
 	private HashMap<String, String> ids;
 	private UserRepository userRepository;
@@ -51,13 +53,13 @@ public class LoginService {
 			aesService = new AesService();
 		} catch (NoSuchAlgorithmException e) {
 			LOG.error(e);
-			e.printStackTrace();
-
+			LOG.error(CONTEXT_ERROR, e);
 			throw new ErrorLoadAesException();
 		}
 	}
 
-	public boolean userRegister(UserData data) throws IOException, AesFailedException {
+	public boolean userRegister(UserData data)
+			throws IOException, AesFailedException, InvalidAlgorithmParameterException {
 		if (data == null) {
 			LOG.error("Error, datos no validos");
 			return false;
@@ -66,30 +68,29 @@ public class LoginService {
 		UserEntity userEntity = userDtoToEntity(data);
 
 		try {
-			if (userEntity != null) {
-				UserEntity userEncripted;
 
-				userEncripted = encryptUserEntity(userEntity);
+			UserEntity userEncripted;
 
-				String idEncrypted = aesService.encrypt(UUID.randomUUID().toString());
-				userEncripted.setId(idEncrypted);
-				IdEntity idEntity = new IdEntity();
-				idEntity.setId(idEncrypted);
-				idEntity.setUsername(userEncripted.getUsername());
-				users.put(idEncrypted, userEntity);
-				ids.put(idEntity.getUsername(), idEntity.getId());
-				LOG.info("Usuario encriptado con exito");
-				if (userRepository.save(users) && idRepository.save(ids)) {
-					LOG.info("Usuario guardado con exito");
-					return true;
-				}
+			userEncripted = encryptUserEntity(userEntity);
+
+			String idEncrypted = aesService.encrypt(UUID.randomUUID().toString());
+			userEncripted.setId(idEncrypted);
+			IdEntity idEntity = new IdEntity();
+			idEntity.setId(idEncrypted);
+			idEntity.setUsername(userEncripted.getUsername());
+			users.put(idEncrypted, userEntity);
+			ids.put(idEntity.getUsername(), idEntity.getId());
+			LOG.info("Usuario encriptado con exito");
+			if (userRepository.save(users) && idRepository.save(ids)) {
+				LOG.info("Usuario guardado con exito");
+				return true;
 			}
 
 		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
 				| BadPaddingException e) {
 			LOG.error("Error al cifrar/descifrar datos {}.", userEntity.getUsername());
 			LOG.error("Error al cifrar/descifrar datos. {}", userEntity);
-			e.printStackTrace();
+			LOG.error(CONTEXT_ERROR, e);
 			throw new AesFailedException();
 
 		}
@@ -97,7 +98,7 @@ public class LoginService {
 		return false;
 	}
 
-	public String auth(UserData data) throws UserNotFoundException {
+	public String auth(UserData data) throws UserNotFoundException, InvalidAlgorithmParameterException {
 		if (data == null) {
 			LOG.error("Error datos no validos");
 			throw new UserNotFoundException();
@@ -112,15 +113,14 @@ public class LoginService {
 				token = generateToken(id);
 				LOG.info("Token generado con exito {}", token);
 				return token;
-			}else {
+			} else {
 				throw new UserNotFoundException();
 			}
-			
-			
+
 		} catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | IllegalBlockSizeException
 				| BadPaddingException e) {
 			LOG.error("Los datos ingresados no son correctos. {}", data.getUsername());
-			e.printStackTrace();
+			LOG.error(CONTEXT_ERROR, e);
 		}
 
 		LOG.error("Los datos ingresados no son correctos.");
@@ -135,6 +135,7 @@ public class LoginService {
 				return false;
 			}
 			String id = tokenDivide[INDEX_OF_ID];
+			LOG.debug("ID: {}", id);
 			String date = tokenDivide[INDEX_OF_DATE];
 
 			LocalDateTime tokenTime = LocalDateTime.parse(date);
@@ -179,8 +180,9 @@ public class LoginService {
 		return entity;
 	}
 
-	private UserEntity encryptUserEntity(UserEntity userEntityOriginal) throws NoSuchAlgorithmException,
-			InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+	private UserEntity encryptUserEntity(UserEntity userEntityOriginal)
+			throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException,
+			BadPaddingException, InvalidAlgorithmParameterException {
 		UserEntity userEntityEncrypted = new UserEntity();
 		userEntityEncrypted.setUsername(aesService.encrypt(userEntityOriginal.getUsername()));
 		userEntityEncrypted.setPsw(aesService.encrypt(userEntityOriginal.getPsw()));

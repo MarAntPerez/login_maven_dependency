@@ -8,36 +8,41 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-<span class="nc" id="L11">public class IdRepository {</span>
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-	public HashMap&lt;String, String&gt; load(){
-<span class="nc" id="L14">		HashMap&lt;String, String&gt; ids = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L14">public class IdRepository {</span>
+	
+<span class="nc" id="L16">	private static final Logger LOG = LogManager.getLogger(IdRepository.class);</span>
+
+	public Map&lt;String, String&gt; load(){
+<span class="nc" id="L19">		HashMap&lt;String, String&gt; ids = new HashMap&lt;&gt;();</span>
 		
-<span class="nc" id="L16">		try (BufferedReader reader = new BufferedReader(new FileReader(&quot;Datos/ids.txt&quot;))){</span>
+<span class="nc" id="L21">		try (BufferedReader reader = new BufferedReader(new FileReader(&quot;Datos/ids.txt&quot;))){</span>
 			String line;
-<span class="nc bnc" id="L18" title="All 2 branches missed.">			while((line = reader.readLine()) != null) {</span>
-<span class="nc" id="L19">				String[] parts = line.split(&quot;=&quot;, 2);</span>
-<span class="nc bnc" id="L20" title="All 2 branches missed.">				if(parts.length == 2) {</span>
-<span class="nc" id="L21">					ids.put(parts[0], parts[1]);</span>
+<span class="nc bnc" id="L23" title="All 2 branches missed.">			while((line = reader.readLine()) != null) {</span>
+<span class="nc" id="L24">				String[] parts = line.split(&quot;=&quot;, 2);</span>
+<span class="nc bnc" id="L25" title="All 2 branches missed.">				if(parts.length == 2) {</span>
+<span class="nc" id="L26">					ids.put(parts[0], parts[1]);</span>
 				}
-<span class="nc" id="L23">			}</span>
-<span class="nc" id="L24">		}catch (IOException e){</span>
-<span class="nc" id="L25">			e.printStackTrace();</span>
-<span class="nc" id="L26">		}</span>
-<span class="nc" id="L27">		return ids;</span>
+<span class="nc" id="L28">			}</span>
+<span class="nc" id="L29">		}catch (IOException e){</span>
+<span class="nc" id="L30">			LOG.error(&quot;context: &quot;, e);</span>
+<span class="nc" id="L31">		}</span>
+<span class="nc" id="L32">		return ids;</span>
 	}
 	
-	public boolean save(HashMap&lt;String, String&gt; ids) throws IOException {
-<span class="nc" id="L31">		try(BufferedWriter writer = new BufferedWriter(new FileWriter(&quot;Datos/ids.txt&quot;))){</span>
-<span class="nc bnc" id="L32" title="All 2 branches missed.">			for(Map.Entry&lt;String, String&gt; entry : ids.entrySet()) {</span>
-<span class="nc" id="L33">				writer.write(entry.getKey() + &quot;=&quot; +entry.getValue());</span>
-<span class="nc" id="L34">				writer.newLine();</span>
-<span class="nc" id="L35">			}</span>
-<span class="nc" id="L36">		}catch(IOException e) {</span>
-<span class="nc" id="L37">			e.printStackTrace();</span>
-<span class="nc" id="L38">			return false;</span>
-<span class="nc" id="L39">		}</span>
-<span class="nc" id="L40">		return true;</span>
+	public boolean save(Map&lt;String, String&gt; ids) throws IOException {
+<span class="nc" id="L36">		try(BufferedWriter writer = new BufferedWriter(new FileWriter(&quot;Datos/ids.txt&quot;))){</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">			for(Map.Entry&lt;String, String&gt; entry : ids.entrySet()) {</span>
+<span class="nc" id="L38">				writer.write(entry.getKey() + &quot;=&quot; +entry.getValue());</span>
+<span class="nc" id="L39">				writer.newLine();</span>
+<span class="nc" id="L40">			}</span>
+<span class="nc" id="L41">		}catch(IOException e) {</span>
+<span class="nc" id="L42">			LOG.error(&quot;context: &quot;, e);</span>
+<span class="nc" id="L43">			return false;</span>
+<span class="nc" id="L44">		}</span>
+<span class="nc" id="L45">		return true;</span>
 	}
 	
 }

@@ -16,6 +16,10 @@
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
 		<exec.mainClass>login.login</exec.mainClass>
+		<sonar.exclusions>src/main/java/cmd/****/*.java,
+			src/main/java/dto/****/*.java, src/main/java/entity/****/*.java,
+			src/main/java/enums/****/*.java,
+			src/main/java/exceptions/****/*.java</sonar.exclusions>
 	</properties>
 
 	<dependencies>

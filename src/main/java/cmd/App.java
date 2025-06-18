@@ -1,5 +1,7 @@
+package cmd;
 
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
@@ -29,7 +31,7 @@ import service.LoginService;
 public class App {
 	public static void main(String[] args) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
 			IllegalBlockSizeException, BadPaddingException, IOException, ErrorLoadAesException, AesFailedException,
-			TokenInvalidException, UserNotFoundException {
+			TokenInvalidException, UserNotFoundException, InvalidAlgorithmParameterException {
 
 		Logger LOG = LogManager.getLogger(App.class);
 

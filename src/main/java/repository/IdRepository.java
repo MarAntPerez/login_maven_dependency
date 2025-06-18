@@ -8,9 +8,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class IdRepository {
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-	public HashMap<String, String> load(){
+public class IdRepository {
+	
+	private static final Logger LOG = LogManager.getLogger(IdRepository.class);
+
+	public Map<String, String> load(){
 		HashMap<String, String> ids = new HashMap<>();
 		
 		try (BufferedReader reader = new BufferedReader(new FileReader("Datos/ids.txt"))){
@@ -22,19 +27,19 @@ public class IdRepository {
 				}
 			}
 		}catch (IOException e){
-			e.printStackTrace();
+			LOG.error("context: ", e);
 		}
 		return ids;
 	}
 	
-	public boolean save(HashMap<String, String> ids) throws IOException {
+	public boolean save(Map<String, String> ids) throws IOException {
 		try(BufferedWriter writer = new BufferedWriter(new FileWriter("Datos/ids.txt"))){
 			for(Map.Entry<String, String> entry : ids.entrySet()) {
 				writer.write(entry.getKey() + "=" +entry.getValue());
 				writer.newLine();
 			}
 		}catch(IOException e) {
-			e.printStackTrace();
+			LOG.error("context: ", e);
 			return false;
 		}
 		return true;

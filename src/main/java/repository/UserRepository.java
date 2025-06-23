@@ -38,17 +38,17 @@ public class UserRepository {
 		return users;
 	}
 	
-	public boolean save(Map<String, UserEntity> users) {
-		try (BufferedWriter writer = new BufferedWriter(new FileWriter("Datos/users.txt"))){
+	public boolean save(Map<String, UserEntity> users, String fileName) {
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter("Datos/" + fileName + ".txt"))){
 			for(Map.Entry<String, UserEntity> entry : users.entrySet()){
 				writer.write(entry.getKey() + "=" + entry.getValue());
 				writer.newLine();
 			}
+			return true;
 		}catch (IOException e){
 			LOG.error("context: ", e);
 			return false;
 		}
-		return true;
 	}
 	
 }

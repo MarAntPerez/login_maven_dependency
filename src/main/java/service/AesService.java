@@ -1,11 +1,9 @@
 package service;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
@@ -21,6 +19,7 @@ public class AesService {
 	private static final String KEY = "=18F\\j]/8z5FSeg|d!CoM_v&006O)R/J?8569/n14KD'+`XVU}";
 	private static final String AES_TRANSFORMATION = "AES/CBC/NoPadding";
 	private static final String ALGORITHM = "AES";
+	private static final byte[] FIXED_IV = new byte[16];
 
 	private SecretKey secretKey;
 
@@ -34,40 +33,27 @@ public class AesService {
 	public String encrypt(String word) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException,
 			InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
 		byte[] data = pad(word.getBytes(StandardCharsets.UTF_8));
-		
+
 		Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
-		byte[] iv = new byte[16];
-		new SecureRandom().nextBytes(iv);
-		IvParameterSpec ivSpec = new IvParameterSpec(iv);
-		
+		IvParameterSpec ivSpec = new IvParameterSpec(FIXED_IV);
+
 		cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
 		byte[] encrypted = cipher.doFinal(data);
 
-		ByteBuffer buffer = ByteBuffer.allocate(iv.length + encrypted.length);
-		buffer.put(iv);
-		buffer.put(encrypted);
-
-		return Base64.getEncoder().encodeToString(buffer.array());
+		return Base64.getEncoder().encodeToString(encrypted);
 	}
 
 	public String decrypt(String encryptedBase64) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-		byte[] ivAndCiphertext = Base64.getDecoder().decode(encryptedBase64);
-		ByteBuffer byteBuffer = ByteBuffer.wrap(ivAndCiphertext);
-
-		byte[] iv = new byte[16];
-		byteBuffer.get(iv);
-
-		byte[] ciphertext = new byte[byteBuffer.remaining()];
-		byteBuffer.get(ciphertext);
+		byte[] ciphertext = Base64.getDecoder().decode(encryptedBase64);
 
 		Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
-		cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+		cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(FIXED_IV));
 
 		byte[] decrypted = cipher.doFinal(ciphertext);
-		return new String(decrypted, StandardCharsets.UTF_8);
+		return new String(decrypted, StandardCharsets.UTF_8).trim();
 	}
-	
+
 	private byte[] pad(byte[] data) {
 		int blockSize = 16;
 		int paddedLength = ((data.length + blockSize - 1) / blockSize) * blockSize;

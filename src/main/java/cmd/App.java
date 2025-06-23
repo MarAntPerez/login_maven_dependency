@@ -19,6 +19,7 @@ import entity.UserEntity;
 import enums.TokenDuration;
 import exceptions.AesFailedException;
 import exceptions.ErrorLoadAesException;
+import exceptions.ExpiredTokenException;
 import exceptions.TokenInvalidException;
 import exceptions.UserNotFoundException;
 import service.AesService;
@@ -31,7 +32,7 @@ import service.LoginService;
 public class App {
 	public static void main(String[] args) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
 			IllegalBlockSizeException, BadPaddingException, IOException, ErrorLoadAesException, AesFailedException,
-			TokenInvalidException, UserNotFoundException, InvalidAlgorithmParameterException {
+			TokenInvalidException, UserNotFoundException, InvalidAlgorithmParameterException, ExpiredTokenException {
 
 		Logger LOG = LogManager.getLogger(App.class);
 

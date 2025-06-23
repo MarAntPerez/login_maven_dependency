@@ -1,1 +1,3 @@
-com\mar\login\AppTest.class
+service\LoginServiceTest.class
+repository\IdRepositoryTest.class
+repository\UserRepositoryTest.class

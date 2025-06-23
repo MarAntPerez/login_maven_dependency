@@ -36,6 +36,8 @@ public class LoginService {
 	private static final int INDEX_OF_ID = 0;
 	private static final int INDEX_OF_DATE = 1;
 	private static final String CONTEXT_ERROR = "context: ";
+	private static final String FILE_IDS = "ids";
+	private static final String FILE_USERS = "users";
 	private HashMap<String, UserEntity> users;
 	private HashMap<String, String> ids;
 	private UserRepository userRepository;
@@ -56,6 +58,14 @@ public class LoginService {
 			LOG.error(CONTEXT_ERROR, e);
 			throw new ErrorLoadAesException();
 		}
+	}
+
+	public LoginService(AesService aesService, UserRepository userRepository, IdRepository idRepository,
+			TokenDuration tokenDuration) {
+		this.aesService = aesService;
+		this.userRepository = userRepository;
+		this.idRepository = idRepository;
+		this.tokenDuration = tokenDuration;
 	}
 
 	public boolean userRegister(UserData data)
@@ -81,7 +91,7 @@ public class LoginService {
 			users.put(idEncrypted, userEntity);
 			ids.put(idEntity.getUsername(), idEntity.getId());
 			LOG.info("Usuario encriptado con exito");
-			if (userRepository.save(users) && idRepository.save(ids)) {
+			if (userRepository.save(users, FILE_USERS) && idRepository.save(ids, FILE_IDS)) {
 				LOG.info("Usuario guardado con exito");
 				return true;
 			}
@@ -92,9 +102,7 @@ public class LoginService {
 			LOG.error("Error al cifrar/descifrar datos. {}", userEntity);
 			LOG.error(CONTEXT_ERROR, e);
 			throw new AesFailedException();
-
 		}
-		LOG.error("Error al registrar el usuario");
 		return false;
 	}
 
@@ -107,7 +115,8 @@ public class LoginService {
 		UserEntity user = userDtoToEntity(data);
 
 		try {
-			String id = searchId(aesService.encrypt(user.getUsername()));
+			String usernameEncrypted = aesService.encrypt(user.getUsername());
+			String id = searchId(usernameEncrypted);
 			String token;
 			if (id != null) {
 				token = generateToken(id);
@@ -121,13 +130,11 @@ public class LoginService {
 				| BadPaddingException e) {
 			LOG.error("Los datos ingresados no son correctos. {}", data.getUsername());
 			LOG.error(CONTEXT_ERROR, e);
+			throw new UserNotFoundException();
 		}
-
-		LOG.error("Los datos ingresados no son correctos.");
-		throw new UserNotFoundException();
 	}
 
-	public boolean verifyToken(String token) throws TokenInvalidException {
+	public boolean verifyToken(String token) throws TokenInvalidException, ExpiredTokenException {
 		try {
 			String[] tokenDivide = token.split("_");
 			if (tokenDivide.length != 2) {
@@ -152,10 +159,12 @@ public class LoginService {
 				throw new ExpiredTokenException();
 			}
 		} catch (DateTimeException e) {
-			LOG.error("Fecha de token no valido ", e);
+			LOG.error("Fecha de token no valida", e);
 			throw new TokenInvalidException();
+		} catch (ExpiredTokenException e) {
+			throw e;
 		} catch (Exception e) {
-			LOG.error("Error al verificar el token ", e);
+			LOG.error("Error al verificar el token", e);
 			throw new TokenInvalidException();
 		}
 	}
@@ -165,11 +174,6 @@ public class LoginService {
 	}
 
 	private UserEntity userDtoToEntity(UserData user) {
-		if (user == null) {
-			LOG.error("No fue posible convertir el objeto DTO a Entity");
-			return null;
-		}
-
 		UserEntity entity = new UserEntity();
 		entity.setUsername(user.getUsername());
 		entity.setPsw(user.getPsw());

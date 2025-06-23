@@ -1,12 +1,12 @@
 GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
 login,enums,TokenDuration,0,42,0,0,0,6,0,3,0,3
 login,service,AesService,27,83,0,0,5,18,1,4,1,4
-login,service,LoginService,64,277,4,10,20,74,6,14,2,11
-login,cmd,App,72,0,2,0,18,0,3,0,2,0
-login,repository,UserRepository,0,102,2,6,0,25,2,6,0,4
+login,service,LoginService,72,284,3,11,24,76,6,15,3,11
+login,cmd,App,71,0,2,0,18,0,3,0,2,0
+login,repository,UserRepository,0,101,2,6,0,25,2,6,0,4
 login,repository,IdRepository,0,94,1,5,0,22,1,6,0,4
 login,exceptions,TokenInvalidException,0,4,0,0,0,2,0,1,0,1
-login,exceptions,UserNotFoundException,4,0,0,0,2,0,1,0,1,0
+login,exceptions,UserNotFoundException,0,4,0,0,0,2,0,1,0,1
 login,exceptions,ExpiredTokenException,0,4,0,0,0,2,0,1,0,1
 login,exceptions,ErrorLoadAesException,4,0,0,0,2,0,1,0,1,0
 login,exceptions,AesFailedException,4,0,0,0,2,0,1,0,1,0

@@ -5,7 +5,7 @@
 
 	<groupId>com.mar</groupId>
 	<artifactId>login</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>login</name>
@@ -13,8 +13,8 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>21</maven.compiler.source>
-		<maven.compiler.target>21</maven.compiler.target>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
 		<exec.mainClass>login.login</exec.mainClass>
 		<sonar.exclusions>src/main/java/cmd/****/*.java,
 			src/main/java/dto/****/*.java, src/main/java/entity/****/*.java,

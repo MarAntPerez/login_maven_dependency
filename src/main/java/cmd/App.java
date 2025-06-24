@@ -45,7 +45,7 @@ public class App {
 		user.setUsername("username");
 		user.setPsw("1234");
 		if (login.userRegister(user)) {
-			LOG.info("Usuario registrado con exito");
+			LOG.info("LOG en main Usuario registrado con exito");
 		}
 		login.userRegister(null);
 		login.auth(user);

@@ -42,12 +42,6 @@ public class UserEntity {
 		this.id = id;
 	}
 	
-	public UserEntity fromString(String data) {
-		String[] parts = data.split(",");
-		if(parts.length != 3) return null;
-		return new UserEntity(parts[0], parts[1], parts[2]);
-	}
-
 	@Override
 	public String toString() {
 		return "UserEntity [username=" + username + ", psw=" + psw + ", id=" + id + "]";

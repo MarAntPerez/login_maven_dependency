@@ -88,7 +88,7 @@ public class LoginService {
 			IdEntity idEntity = new IdEntity();
 			idEntity.setId(idEncrypted);
 			idEntity.setUsername(userEncripted.getUsername());
-			users.put(idEncrypted, userEntity);
+			users.put(idEncrypted, userEncripted);
 			ids.put(idEntity.getUsername(), idEntity.getId());
 			LOG.info("Usuario encriptado con exito");
 			if (userRepository.save(users, FILE_USERS) && idRepository.save(ids, FILE_IDS)) {
@@ -98,7 +98,6 @@ public class LoginService {
 
 		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
 				| BadPaddingException e) {
-			LOG.error("Error al cifrar/descifrar datos {}.", userEntity.getUsername());
 			LOG.error("Error al cifrar/descifrar datos. {}", userEntity);
 			LOG.error(CONTEXT_ERROR, e);
 			throw new AesFailedException();
